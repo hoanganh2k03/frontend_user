@@ -12,7 +12,8 @@ const Verify = () => {
   const success = searchParams.get('success'); // Dùng cho Stripe
   const orderId = searchParams.get('orderId');
   const resultCode = searchParams.get('resultCode'); // Dùng cho MoMo
-
+console.log(success)
+console.log(orderId)
   const verifyPayment = async () => {
     console.log("TOKEN IS"+token)
     try {
@@ -50,6 +51,7 @@ const Verify = () => {
       }
       // Xử lý Stripe
       else if (success !== null) {
+        console.log(success,orderId)
         response = await axios.post(
           `${backendUrl}/api/order1/verifyStripe`,
           { success, orderId },

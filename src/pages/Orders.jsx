@@ -23,7 +23,6 @@ const Orders = () => {
       if (response.data.success) {
         const ordersWithItems = await Promise.all(
           response.data.orders.map(async (order) => {
-            // Gọi API để lấy danh sách sản phẩm trong đơn hàng
             const itemsResponse = await axios.get(
               `${backendUrl}/api/order1/items/${order.id}`,
               { headers: { token } }
@@ -36,11 +35,17 @@ const Orders = () => {
             }));
             return {
               ...order,
-              items: updatedItems || [], // Thêm items vào order
+              items: updatedItems || [],
             };
           })
         );
-        setOrders(ordersWithItems.reverse());
+
+        // Sắp xếp đơn hàng theo created_at giảm dần (mới nhất lên đầu)
+        // Backend đã sắp xếp, nhưng thêm sort ở đây để dự phòng
+        const sortedOrders = ordersWithItems.sort((a, b) => 
+          new Date(b.created_at) - new Date(a.created_at)
+        );
+        setOrders(sortedOrders);
       } else {
         console.error('Failed to load orders:', response.data.message);
       }
@@ -75,7 +80,7 @@ const Orders = () => {
                     Order #{order.id}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Placed on: {new Date(order.created_at).toDateString()}
+                    Placed on: {new Date(order.created_at).toLocaleString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
