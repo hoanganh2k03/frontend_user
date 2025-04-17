@@ -14,7 +14,7 @@ const ShopContextProvider = (props) => {
     const [showSearch, setShowSearch] = useState(false);
     const [cartItems, setCartItems] = useState({});
     const [products, setProducts] = useState([]);
-    const [token, setToken] = useState('')
+    const [token, setToken] = useState(localStorage.getItem('token') || null);
     const [bestSeller, setBestSeller] = useState([]);
     const navigate = useNavigate();
 
@@ -74,7 +74,9 @@ const ShopContextProvider = (props) => {
           navigate('/login');
           return;
         }
-      
+        console.log('Calling update with cart_item_id:', cart_item_id, 'quantity:', quantity);
+        console.log('Backend URL:', `${backendUrl}/api/cart/update`);
+        console.log('Token:', token);
         try {
           const response = await axios.put(
             `${backendUrl}/api/cart/update`,

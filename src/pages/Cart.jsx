@@ -6,7 +6,7 @@ import CartTotal from '../components/CartTotal';
 
 const Cart = () => {
 
-  const { products, currency, cartItems, updateQuantity, navigate, backendUrl } = useContext(ShopContext);
+  const { products, currency, cartItems, updateQuantity, navigate, backendUrl,removeFromCart } = useContext(ShopContext);
 
   const [cartData, setCartData] = useState([]);
   useEffect(() => {
@@ -68,7 +68,7 @@ const Cart = () => {
                 defaultValue={item.quantity}
               />
               <img
-                onClick={() => updateQuantity(item.cart_item_id, 0)}
+                onClick={() => removeFromCart(item.cart_item_id)}
                 className='w-4 mr-4 sm:w-5 cursor-pointer'
                 src={assets.bin_icon}
                 alt='Remove'

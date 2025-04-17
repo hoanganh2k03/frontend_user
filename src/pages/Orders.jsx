@@ -1,81 +1,135 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { ShopContext } from '../context/ShopContext'
+import React, { useContext, useEffect, useState } from 'react';
+import { ShopContext } from '../context/ShopContext';
 import Title from '../components/Title';
 import axios from 'axios';
 
 const Orders = () => {
-
-  const { backendUrl, token , currency} = useContext(ShopContext);
-
-  const [orderData,setorderData] = useState([])
+  const { backendUrl, token, currency, navigate } = useContext(ShopContext);
+  const [orders, setOrders] = useState([]);
 
   const loadOrderData = async () => {
     try {
       if (!token) {
-        return null
+        navigate('/login');
+        return;
       }
 
-      const response = await axios.post(backendUrl + '/api/order/userorders',{},{headers:{token}})
+      const response = await axios.post(
+        `${backendUrl}/api/order1/userorders`,
+        {},
+        { headers: { token } }
+      );
+
       if (response.data.success) {
-        let allOrdersItem = []
-        response.data.orders.map((order)=>{
-          order.items.map((item)=>{
-            item['status'] = order.status
-            item['payment'] = order.payment
-            item['paymentMethod'] = order.paymentMethod
-            item['date'] = order.date
-            allOrdersItem.push(item)
+        const ordersWithItems = await Promise.all(
+          response.data.orders.map(async (order) => {
+            // Gọi API để lấy danh sách sản phẩm trong đơn hàng
+            const itemsResponse = await axios.get(
+              `${backendUrl}/api/order/items/${order.id}`,
+              { headers: { token } }
+            );
+            return {
+              ...order,
+              items: itemsResponse.data.items || [], // Thêm items vào order
+            };
           })
-        })
-        setorderData(allOrdersItem.reverse())
+        );
+        setOrders(ordersWithItems.reverse());
+      } else {
+        console.error('Failed to load orders:', response.data.message);
       }
-      
     } catch (error) {
-      
+      console.error('Error loading orders:', error);
     }
-  }
+  };
 
-  useEffect(()=>{
-    loadOrderData()
-  },[token])
+  useEffect(() => {
+    loadOrderData();
+  }, [token]);
 
   return (
-    <div className='border-t pt-16'>
+    <div className="border-t pt-16">
+      <div className="text-2xl">
+        <Title text1={'MY'} text2={'ORDERS'} />
+      </div>
 
-        <div className='text-2xl'>
-            <Title text1={'MY'} text2={'ORDERS'}/>
-        </div>
-
-        <div>
-            {
-              orderData.map((item,index) => (
-                <div key={index} className='py-4 border-t border-b text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4'>
-                    <div className='flex items-start gap-6 text-sm'>
-                        <img className='w-16 sm:w-20' src={item.image[0]} alt="" />
-                        <div>
-                          <p className='sm:text-base font-medium'>{item.name}</p>
-                          <div className='flex items-center gap-3 mt-1 text-base text-gray-700'>
-                            <p>{currency}{item.price}</p>
-                            <p>Quantity: {item.quantity}</p>
-                            <p>Size: {item.size}</p>
-                          </div>
-                          <p className='mt-1'>Date: <span className=' text-gray-400'>{new Date(item.date).toDateString()}</span></p>
-                          <p className='mt-1'>Payment: <span className=' text-gray-400'>{item.paymentMethod}</span></p>
-                        </div>
-                    </div>
-                    <div className='md:w-1/2 flex justify-between'>
-                        <div className='flex items-center gap-2'>
-                            <p className='min-w-2 h-2 rounded-full bg-green-500'></p>
-                            <p className='text-sm md:text-base'>{item.status}</p>
-                        </div>
-                        <button onClick={loadOrderData} className='border px-4 py-2 text-sm font-medium rounded-sm'>Track Order</button>
-                    </div>
+      <div>
+        {orders.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">No orders found.</p>
+        ) : (
+          orders.map((order, index) => (
+            <div
+              key={index}
+              className="py-4 border-t border-b text-gray-700"
+            >
+              {/* Thông tin đơn hàng */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                <div className="flex items-center gap-4">
+                  <p className="text-sm md:text-base font-medium">
+                    Order #{order.id}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Placed on: {new Date(order.created_at).toDateString()}
+                  </p>
                 </div>
-              ))
-            }
-        </div>
-    </div>
-  )
-}
+                <div className="flex items-center gap-4">
+                  <p className="text-sm md:text-base">
+                    Total: {currency}{order.total}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="min-w-2 h-2 rounded-full bg-green-500"></p>
+                    <p className="text-sm md:text-base">{order.status}</p>
+                  </div>
+                  <button
+                    onClick={loadOrderData}
+                    className="border px-4 py-2 text-sm font-medium rounded-sm"
+                  >
+                    Refresh Status
+                  </button>
+                </div>
+              </div>
 
-export default Orders
+              {/* Danh sách sản phẩm trong đơn hàng */}
+              {order.items.length === 0 ? (
+                <p className="text-gray-500 text-sm">No items in this order.</p>
+              ) : (
+                order.items.map((item, itemIndex) => (
+                  <div
+                    key={itemIndex}
+                    className="flex flex-col md:flex-row md:items-center gap-4 py-2 border-t"
+                  >
+                    <div className="flex items-start gap-6 text-sm">
+                      <img
+                        className="w-16 sm:w-20"
+                        src={item.image && item.image[0] ? item.image[0] : 'https://via.placeholder.com/80'}
+                        alt={item.name}
+                      />
+                      <div>
+                        <p className="sm:text-base font-medium">{item.name}</p>
+                        <div className="flex items-center gap-3 mt-1 text-base text-gray-700">
+                          <p>{currency}{item.price}</p>
+                          <p>Quantity: {item.quantity}</p>
+                          <p>Size: {item.size}</p>
+                        </div>
+                        <p className="mt-1">
+                          Payment Method:{' '}
+                          <span className="text-gray-400">{order.payment_method || 'N/A'}</span>
+                        </p>
+                        <p className="mt-1">
+                          Payment Status:{' '}
+                          <span className="text-gray-400">{order.payment_status}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Orders;
