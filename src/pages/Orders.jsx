@@ -25,12 +25,18 @@ const Orders = () => {
           response.data.orders.map(async (order) => {
             // Gọi API để lấy danh sách sản phẩm trong đơn hàng
             const itemsResponse = await axios.get(
-              `${backendUrl}/api/order/items/${order.id}`,
+              `${backendUrl}/api/order1/items/${order.id}`,
               { headers: { token } }
             );
+            const updatedItems = itemsResponse.data.items.map((item) => ({
+              ...item,
+              image: item.image && item.image[0]
+                ? [`${backendUrl}/uploads/${item.image[0]}`]
+                : [],
+            }));
             return {
               ...order,
-              items: itemsResponse.data.items || [], // Thêm items vào order
+              items: updatedItems || [], // Thêm items vào order
             };
           })
         );
