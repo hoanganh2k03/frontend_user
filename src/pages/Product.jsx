@@ -15,7 +15,7 @@ const Product = () => {
   const [error, setError] = useState(null);
 
   // Base URL cho hình ảnh
-  const baseImageUrl = 'http://localhost:3000/uploads/';
+  const baseImageUrl = 'http://localhost:3000';
 
   const fetchProductData = async () => {
     setLoading(true);
@@ -67,6 +67,7 @@ const Product = () => {
             {/* Hiển thị small_image ở đầu danh sách thumbnail */}
             {productData.small_image && (
               <img
+                crossOrigin='anonymous'
                 onClick={() => setImage(`${baseImageUrl}${productData.small_image}`)}
                 src={`${baseImageUrl}${productData.small_image}`}
                 className="w-[142px] h-[120px] sm:mb-3 flex-shrink-0 cursor-pointer object-cover"
@@ -76,6 +77,7 @@ const Product = () => {
             {/* Hiển thị các hình ảnh từ productData.image sau small_image */}
             {productData.image.map((item, index) => (
               <img
+                crossOrigin='anonymous'
                 onClick={() => setImage(`${baseImageUrl}${item}`)}
                 src={`${baseImageUrl}${item}`}
                 key={index}
@@ -86,7 +88,7 @@ const Product = () => {
           </div>
           <div className="w-full sm:w-[80%]">
             {image ? (
-              <img className="w-full h-auto" src={image} alt="" />
+              <img crossOrigin='anonymous' className="w-full h-auto" src={image} alt="" />
             ) : (
               <p className="text-center text-gray-500">No image available</p>
             )}
@@ -126,9 +128,8 @@ const Product = () => {
           </div>
           <button
             onClick={() => addToCart(productData.id, size)}
-            className={`bg-black text-white px-8 py-3 text-sm active:bg-gray-700 ${
-              productData.out_of_stock || !size ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            className={`bg-black text-white px-8 py-3 text-sm active:bg-gray-700 ${productData.out_of_stock || !size ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             disabled={productData.out_of_stock || !size}
           >
             ADD TO CART
@@ -159,7 +160,7 @@ const Product = () => {
       </div>
 
       {/* --------- Display Related Products ---------- */}
-      <RelatedProducts category={productData.category} subCategory={productData.subCategory} productId={productData.id}/>
+      <RelatedProducts category={productData.category} subCategory={productData.subCategory} productId={productData.id} />
     </div>
   ) : (
     <div className="opacity-0"></div>

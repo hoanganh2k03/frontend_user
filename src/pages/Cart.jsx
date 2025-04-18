@@ -16,8 +16,8 @@ const Cart = () => {
         size: item.size,
         quantity: item.quantity,
         cart_item_id: item.cart_item_id,
-        product: item.product, 
-        price:item.price
+        product: item.product,
+        price: item.price
         // Nếu cần để cập nhật/xóa
       }));
       setCartData(tempData);
@@ -35,7 +35,7 @@ const Cart = () => {
       <div>
         {cartData.map((item, index) => {
           // Tạo URL hình ảnh từ small_image
-          const imageUrl = `${backendUrl}/uploads/${item.product.small_image}`;
+          const imageUrl = `${backendUrl}${item.product.small_image}`;
 
           return (
             <div
@@ -44,6 +44,7 @@ const Cart = () => {
             >
               <div className='flex items-start gap-6'>
                 <img
+                  crossOrigin='anonymous'
                   className='w-16 sm:w-20'
                   src={imageUrl}
                   alt={item.product.name}

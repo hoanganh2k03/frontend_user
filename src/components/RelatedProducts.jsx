@@ -4,7 +4,7 @@ import { ShopContext } from '../context/ShopContext';
 import Title from './Title';
 import ProductItem from './ProductItem';
 
-const RelatedProducts = ({ category, subCategory, productId}) => {
+const RelatedProducts = ({ category, subCategory, productId }) => {
   const { products } = useContext(ShopContext);
   const [related, setRelated] = useState([]);
 
@@ -14,7 +14,7 @@ const RelatedProducts = ({ category, subCategory, productId}) => {
 
       // Lọc theo category và subCategory (so sánh với name trong object)
       productsCopy = productsCopy.filter((item) => category === item.category.name);
-      productsCopy = productsCopy.filter((item) => subCategory === item.subCategory.name);
+      // productsCopy = productsCopy.filter((item) => subCategory === item.subCategory.name);
       productsCopy = productsCopy.filter((item) => item.id !== parseInt(productId));
       setRelated(productsCopy.slice(0, 5));
     }
