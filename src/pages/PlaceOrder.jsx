@@ -74,7 +74,13 @@ const PlaceOrder = () => {
         case 'stripe':
           const responseStripe = await axios.post(backendUrl + '/api/order1/stripe', orderData, { headers: { token } });
           if (responseStripe.data.success) {
-            const { session_url } = responseStripe.data;
+            const { session_url, session_id } = responseStripe.data;
+            // Lưu session_id, address, và amount vào localStorage
+            localStorage.setItem('stripe_session_id', session_id);
+            localStorage.setItem('order_address', JSON.stringify(orderData.address));
+            localStorage.setItem('order_amount', orderData.amount.toString());
+            console.log('Session ID:', session_id);
+            console.log('Redirecting to:', session_url);
             window.location.replace(session_url);
           } else {
             toast.error(responseStripe.data.message);
@@ -82,14 +88,25 @@ const PlaceOrder = () => {
           break;
 
         case 'momo':
-          console.log('Order data sent to MoMo:', orderData);
-          const responseMomo = await axios.post(backendUrl + '/api/order1/momo', orderData, { headers: { token } });
-          
-          if (responseMomo.data.success) {
-            const { paymentUrl } = responseMomo.data; // Giả định backend trả về paymentUrl
-            window.location.replace(paymentUrl); // Chuyển hướng đến trang thanh toán MoMo
-          } else {
-            toast.error(responseMomo.data.message);
+          try {
+            console.log('Order data sent to MoMo:', orderData);
+            const responseMomo = await axios.post(backendUrl + '/api/order1/momo', orderData, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            console.log('MoMo response:', responseMomo.data);
+        
+            if (responseMomo.data.success) {
+              localStorage.setItem('momo_order_id', responseMomo.data.orderId);
+              localStorage.setItem('momo_address', JSON.stringify(orderData.address));
+              localStorage.setItem('momo_amount', orderData.amount);
+              const { paymentUrl } = responseMomo.data;
+              window.location.replace(paymentUrl);
+            } else {
+              toast.error(responseMomo.data.message || 'Failed to initiate MoMo payment');
+            }
+          } catch (error) {
+            console.error('Error initiating MoMo payment:', error);
+            toast.error('Error initiating MoMo payment: ' + error.message);
           }
           break;
 

@@ -30,7 +30,7 @@ const Orders = () => {
             const updatedItems = itemsResponse.data.items.map((item) => ({
               ...item,
               image: item.image && item.image[0]
-                ? [`${backendUrl}/uploads/${item.image[0]}`]
+                ? [`${backendUrl}${item.image[0]}`]
                 : [],
             }));
             return {
