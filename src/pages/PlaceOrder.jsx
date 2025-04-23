@@ -62,7 +62,7 @@ const PlaceOrder = () => {
 
       switch (method) {
         case 'cod':
-          const response = await axios.post(backendUrl + '/api/order1/place', orderData, { headers: { token } });
+          const response = await axios.post(backendUrl + '/api/order1/place', orderData, { headers: { token }, withCredentials: true });
           if (response.data.success) {
             setCartItems({});
             toast.success('Order successfully')
@@ -89,25 +89,14 @@ const PlaceOrder = () => {
           break;
 
         case 'momo':
-          try {
-            console.log('Order data sent to MoMo:', orderData);
-            const responseMomo = await axios.post(backendUrl + '/api/order1/momo', orderData, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            console.log('MoMo response:', responseMomo.data);
-        
-            if (responseMomo.data.success) {
-              localStorage.setItem('momo_order_id', responseMomo.data.orderId);
-              localStorage.setItem('momo_address', JSON.stringify(orderData.address));
-              localStorage.setItem('momo_amount', orderData.amount);
-              const { paymentUrl } = responseMomo.data;
-              window.location.replace(paymentUrl);
-            } else {
-              toast.error(responseMomo.data.message || 'Failed to initiate MoMo payment');
-            }
-          } catch (error) {
-            console.error('Error initiating MoMo payment:', error);
-            toast.error('Error initiating MoMo payment: ' + error.message);
+          console.log('Order data sent to MoMo:', orderData);
+          const responseMomo = await axios.post(backendUrl + '/api/order1/momo', orderData, { headers: { token } });
+
+          if (responseMomo.data.success) {
+            const { paymentUrl } = responseMomo.data; // Giả định backend trả về paymentUrl
+            window.location.replace(paymentUrl); // Chuyển hướng đến trang thanh toán MoMo
+          } else {
+            toast.error(responseMomo.data.message);
           }
           break;
 
