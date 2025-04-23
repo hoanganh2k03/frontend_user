@@ -176,19 +176,6 @@ const MyProfile = () => {
 
       if (response.data.success) {
         // Thêm vai trò KOL (role_id: 3) vào bảng user_role
-        await axios.post(
-          backendUrl + '/api/users/assignrole',
-          {
-            user_id: userId,
-            role_id: 3, // Vai trò KOL
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
         toast.success('Đăng ký KOL thành công! Vui lòng chờ xét duyệt.');
         setKolData({ platform: 'Facebook', profile_link: '', reason: '' }); // Reset form
         setIsKolModalOpen(false); // Đóng modal

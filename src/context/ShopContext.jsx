@@ -85,7 +85,6 @@ const ShopContextProvider = (props) => {
           );
       
           if (response.data.success) {
-            toast.success('Cart updated');
             await getUserCart(token);
           } else {
             toast.error(response.data.message);
