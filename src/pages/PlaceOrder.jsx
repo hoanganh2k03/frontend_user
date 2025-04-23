@@ -62,7 +62,7 @@ const PlaceOrder = () => {
 
       switch (method) {
         case 'cod':
-          const response = await axios.post(backendUrl + '/api/order1/place', orderData, { headers: { token } });
+          const response = await axios.post(backendUrl + '/api/order1/place', orderData, { headers: { token }, withCredentials: true });
           if (response.data.success) {
             setCartItems({});
             navigate('/orders');
@@ -84,7 +84,7 @@ const PlaceOrder = () => {
         case 'momo':
           console.log('Order data sent to MoMo:', orderData);
           const responseMomo = await axios.post(backendUrl + '/api/order1/momo', orderData, { headers: { token } });
-          
+
           if (responseMomo.data.success) {
             const { paymentUrl } = responseMomo.data; // Giả định backend trả về paymentUrl
             window.location.replace(paymentUrl); // Chuyển hướng đến trang thanh toán MoMo

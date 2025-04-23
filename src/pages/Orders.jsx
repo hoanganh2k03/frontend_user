@@ -30,7 +30,7 @@ const Orders = () => {
             const updatedItems = itemsResponse.data.items.map((item) => ({
               ...item,
               image: item.image && item.image[0]
-                ? [`${backendUrl}/uploads/${item.image[0]}`]
+                ? [`${backendUrl}${item.image[0]}`]
                 : [],
             }));
             return {
@@ -42,7 +42,7 @@ const Orders = () => {
 
         // Sắp xếp đơn hàng theo created_at giảm dần (mới nhất lên đầu)
         // Backend đã sắp xếp, nhưng thêm sort ở đây để dự phòng
-        const sortedOrders = ordersWithItems.sort((a, b) => 
+        const sortedOrders = ordersWithItems.sort((a, b) =>
           new Date(b.created_at) - new Date(a.created_at)
         );
         setOrders(sortedOrders);
@@ -111,6 +111,7 @@ const Orders = () => {
                   >
                     <div className="flex items-start gap-6 text-sm">
                       <img
+                        crossOrigin='anonymous'
                         className="w-16 sm:w-20"
                         src={item.image && item.image[0] ? item.image[0] : 'https://via.placeholder.com/80'}
                         alt={item.name}
