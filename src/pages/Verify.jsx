@@ -6,26 +6,17 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 
 const Verify = () => {
-  const { navigate, setCartItems, backendUrl } = useContext(ShopContext);
+  const { navigate, setCartItems, backendUrl, token } = useContext(ShopContext);
   const [searchParams] = useSearchParams();
-  const token = localStorage.getItem('token') || useContext(ShopContext).token;
   const success = searchParams.get('success'); // Dùng cho Stripe
-  const orderId = searchParams.get('orderId');
+  const orderId = searchParams.get('orderId'); // Dùng cho MoMo
   const resultCode = searchParams.get('resultCode'); // Dùng cho MoMo
-console.log(success)
-console.log(orderId)
+
   const verifyPayment = async () => {
-    console.log("TOKEN IS"+token)
     try {
       if (!token) {
-        toast.error('Please login HUHU to verify payment');
+        toast.error('Please login to verify payment');
         navigate('/login');
-        return;
-      }
-
-      if (!orderId) {
-        toast.error('Invalid payment verification request');
-        navigate('/cart');
         return;
       }
 
@@ -33,15 +24,41 @@ console.log(orderId)
 
       // Xử lý MoMo
       if (resultCode !== null) {
-        // MoMo redirect với resultCode
+        const orderId = localStorage.getItem('momo_order_id');
+        const address = JSON.parse(localStorage.getItem('momo_address') || '{}');
+        const amount = parseFloat(localStorage.getItem('momo_amount') || '0');
+
+        if (!orderId) {
+          toast.error('Invalid MoMo payment verification request: Missing orderId');
+          navigate('/cart');
+          return;
+        }
+
+        if (!address.recipient_name || !address.phone_num || !address.address) {
+          toast.error('Invalid address data');
+          navigate('/cart');
+          return;
+        }
+
+        if (!amount) {
+          toast.error('Invalid amount: Missing amount in localStorage');
+          navigate('/cart');
+          return;
+        }
+
+        console.log('Verifying MoMo payment:', { orderId, address, amount });
+
         response = await axios.post(
           `${backendUrl}/api/order1/verifyMomo`,
-          { orderId },
-          { headers: { token } }
+          { orderId, address, amount },
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (response.data.success) {
           setCartItems({});
+          localStorage.removeItem('momo_order_id');
+          localStorage.removeItem('momo_address');
+          localStorage.removeItem('momo_amount');
           toast.success('Payment successful!');
           navigate('/orders');
         } else {
@@ -51,19 +68,45 @@ console.log(orderId)
       }
       // Xử lý Stripe
       else if (success !== null) {
-        console.log(success,orderId)
+        const sessionId = localStorage.getItem('stripe_session_id');
+        const address = JSON.parse(localStorage.getItem('order_address') || '{}');
+        const amount = parseFloat(localStorage.getItem('order_amount') || '0');
+
+        if (!sessionId) {
+          toast.error('Invalid Stripe payment verification request: Missing sessionId');
+          navigate('/cart');
+          return;
+        }
+
+        if (!address.recipient_name || !address.phone_num || !address.address) {
+          toast.error('Invalid address data');
+          navigate('/cart');
+          return;
+        }
+
+        if (!amount) {
+          toast.error('Invalid amount: Missing amount in localStorage');
+          navigate('/cart');
+          return;
+        }
+
+        console.log('Verifying Stripe payment:', { sessionId, success, amount });
+
         response = await axios.post(
           `${backendUrl}/api/order1/verifyStripe`,
-          { success, orderId },
-          { headers: { token } }
+          { sessionId, success, address, amount },
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (response.data.success) {
           setCartItems({});
+          localStorage.removeItem('stripe_session_id');
+          localStorage.removeItem('order_address');
+          localStorage.removeItem('order_amount');
           toast.success('Payment successful!');
           navigate('/orders');
         } else {
-          toast.error('Payment failed');
+          toast.error('Payment failed: ' + response.data.message);
           navigate('/cart');
         }
       } else {
@@ -79,7 +122,7 @@ console.log(orderId)
 
   useEffect(() => {
     verifyPayment();
-  }, [token]);
+  }, []);
 
   return (
     <div className="flex items-center justify-center h-screen">

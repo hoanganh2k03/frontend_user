@@ -74,7 +74,13 @@ const PlaceOrder = () => {
         case 'stripe':
           const responseStripe = await axios.post(backendUrl + '/api/order1/stripe', orderData, { headers: { token } });
           if (responseStripe.data.success) {
-            const { session_url } = responseStripe.data;
+            const { session_url, session_id } = responseStripe.data;
+            // Lưu session_id, address, và amount vào localStorage
+            localStorage.setItem('stripe_session_id', session_id);
+            localStorage.setItem('order_address', JSON.stringify(orderData.address));
+            localStorage.setItem('order_amount', orderData.amount.toString());
+            console.log('Session ID:', session_id);
+            console.log('Redirecting to:', session_url);
             window.location.replace(session_url);
           } else {
             toast.error(responseStripe.data.message);
