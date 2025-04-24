@@ -50,6 +50,7 @@ const Login = () => {
           localStorage.setItem('token', response.data.token);
           // Lưu user_id vào localStorage
           localStorage.setItem('user_id', response.data.user.id);
+          toast.success('Login successfully');
         } else {
           toast.error(response.data.message);
         }

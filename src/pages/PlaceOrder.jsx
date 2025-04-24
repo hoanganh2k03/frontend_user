@@ -65,6 +65,7 @@ const PlaceOrder = () => {
           const response = await axios.post(backendUrl + '/api/order1/place', orderData, { headers: { token }, withCredentials: true });
           if (response.data.success) {
             setCartItems({});
+            toast.success('Order successfully')
             navigate('/orders');
           } else {
             toast.error(response.data.message);
@@ -93,6 +94,8 @@ const PlaceOrder = () => {
 
           if (responseMomo.data.success) {
             const { paymentUrl } = responseMomo.data; // Giả định backend trả về paymentUrl
+            localStorage.setItem('momo_address', JSON.stringify(orderData.address));
+            localStorage.setItem('momo_amount', orderData.amount.toString());
             window.location.replace(paymentUrl); // Chuyển hướng đến trang thanh toán MoMo
           } else {
             toast.error(responseMomo.data.message);

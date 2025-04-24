@@ -26,12 +26,12 @@ const Product = () => {
     try {
       const product = await fetchProductById(productId);
       setProductData(product);
+      console.log(productData)
       setImage(product.small_image ? `${baseImageUrl}${product.small_image}` : '');
       setReviews([]);
-      // Fetch reviews immediately after getting product data
       await fetchReviews(product.id);
     } catch (err) {
-      setError('Unable to fetch product information: ' + err.message);
+      setError('Không thể tải thông tin sản phẩm: ' + err.message);
       setProductData(null);
     } finally {
       setLoading(false);
@@ -46,23 +46,21 @@ const Product = () => {
         product_id: productId,
         page: 1,
         limit: 10,
-        sort_by: 'creation_at',
+        sort_by: 'createdAt',
         sort_order: 'DESC',
-      };    
-      const queryString = new URLSearchParams(params).toString();
-      
+      };
       const response = await axios.get(url, { params });
 
       if (response.data.success) {
         setReviews(response.data.reviews);
       } else {
-        console.error('Unable to fetch reviews:', response.data.message);
-        toast.error('Unable to fetch reviews: ' + response.data.message);
+        console.error('Không thể tải đánh giá:', response.data.message);
+        toast.error('Không thể tải đánh giá: ' + response.data.message);
         setReviews([]);
       }
     } catch (error) {
-      console.error('Error fetching reviews:', error);
-      toast.error('Error fetching reviews: ' + error.message);
+      console.error('Lỗi khi tải đánh giá:', error);
+      toast.error('Lỗi khi tải đánh giá: ' + error.message);
       setReviews([]);
     } finally {
       setLoadingReviews(false);
@@ -82,8 +80,15 @@ const Product = () => {
     return selectedItem?.price || 0;
   };
 
+  // Hàm kiểm tra số lượng của kích thước đã chọn
+  const isOutOfStockForSize = () => {
+    if (!productData || !productData.inventory || !size) return false; // Nếu chưa chọn size, không kiểm tra quantity
+    const selectedItem = productData.inventory.find((item) => item.size === size);
+    return selectedItem ? selectedItem.quantity === 0 : false; // Trả về true nếu quantity = 0
+  };
+
   if (loading) {
-    return <div className="text-center py-10">Loading...</div>;
+    return <div className="text-center py-10">Đang tải...</div>;
   }
 
   if (error) {
@@ -92,9 +97,9 @@ const Product = () => {
 
   return productData ? (
     <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
-      {/*----------- Product Data-------------- */}
+      {/*----------- Thông Tin Sản Phẩm-------------- */}
       <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
-        {/*---------- Product Images------------- */}
+        {/*---------- Hình Ảnh Sản Phẩm------------- */}
         <div className="flex-1 flex flex-col-reverse gap-3 sm:flex-row">
           <div className="flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full">
             {productData.small_image && (
@@ -121,12 +126,12 @@ const Product = () => {
             {image ? (
               <img crossOrigin="anonymous" className="w-full h-auto" src={image} alt="" />
             ) : (
-              <p className="text-center text-gray-500">No image available</p>
+              <p className="text-center text-gray-500">Không có hình ảnh</p>
             )}
           </div>
         </div>
 
-        {/* -------- Product Info ---------- */}
+        {/* -------- Thông Tin Sản Phẩm ---------- */}
         <div className="flex-1">
           <h1 className="font-medium text-2xl mt-2">{productData.name}</h1>
           <div className="flex items-center gap-1 mt-2">
@@ -143,7 +148,7 @@ const Product = () => {
           </p>
           <p className="mt-5 text-gray-500 md:w-4/5">{productData.description}</p>
           <div className="flex flex-col gap-4 my-8">
-            <p>Select Size</p>
+            <p>Chọn Kích Thước</p>
             <div className="flex gap-2">
               {productData.sizes.map((item, index) => (
                 <button
@@ -159,22 +164,24 @@ const Product = () => {
           <button
             onClick={() => addToCart(productData.id, size)}
             className={`bg-black text-white px-8 py-3 text-sm active:bg-gray-700 ${
-              productData.out_of_stock || !size ? 'opacity-50 cursor-not-allowed' : ''
+              productData.out_of_stock || !size || isOutOfStockForSize()
+                ? 'opacity-50 cursor-not-allowed'
+                : ''
             }`}
-            disabled={productData.out_of_stock || !size}
+            disabled={productData.out_of_stock || !size || isOutOfStockForSize()}
           >
-            ADD TO CART
+            THÊM VÀO GIỎ HÀNG
           </button>
           <hr className="mt-8 sm:w-4/5" />
           <div className="text-sm text-gray-500 mt-5 flex flex-col gap-1">
-            <p>100% Original product.</p>
-            <p>Cash on delivery is available for this product.</p>
-            <p>Easy return and exchange policy within 7 days.</p>
+            <p>Sản phẩm chính hãng 100%.</p>
+            <p>Có hỗ trợ thanh toán khi nhận hàng.</p>
+            <p>Chính sách đổi trả dễ dàng trong vòng 7 ngày.</p>
           </div>
         </div>
       </div>
 
-      {/* ---------- Description & Review Section ------------- */}
+      {/* ---------- Phần Mô Tả & Đánh Giá ------------- */}
       <div className="mt-20">
         <div className="flex">
           <button
@@ -183,7 +190,7 @@ const Product = () => {
               activeTab === 'description' ? 'font-bold bg-gray-100' : ''
             }`}
           >
-            Description
+            Mô Tả
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
@@ -191,7 +198,7 @@ const Product = () => {
               activeTab === 'reviews' ? 'font-bold bg-gray-100' : ''
             }`}
           >
-            Reviews ({reviews.length})
+            Đánh Giá ({reviews.length})
           </button>
         </div>
         <div className="border px-6 py-6 text-sm text-gray-500">
@@ -199,21 +206,20 @@ const Product = () => {
             <div className="flex flex-col gap-4">
               <p>{productData.description}</p>
               <p>
-                E-commerce websites typically display products or services along with detailed
-                descriptions, images, prices, and available variants (e.g., sizes, colors). Each
-                product usually has its own dedicated page with relevant information.
+                Các trang web thương mại điện tử thường hiển thị sản phẩm hoặc dịch vụ cùng với mô tả chi tiết,
+                hình ảnh, giá cả và các biến thể có sẵn (ví dụ: kích thước, màu sắc). Mỗi sản phẩm thường có trang riêng với thông tin liên quan.
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
               {loadingReviews ? (
-                <p>Loading reviews...</p>
+                <p>Đang tải đánh giá...</p>
               ) : reviews.length > 0 ? (
                 reviews.map((review) => (
-                  <div key={review.review_id} className="border-b pb-4 mb-4">
+                  <div key={review._id} className="border-b pb-4 mb-4">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold">
-                        User #{review.user_id}
+                        {review.user_id?.username || `Người dùng #${review.user_id}`}
                       </p>
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, index) => (
@@ -231,19 +237,22 @@ const Product = () => {
                       </div>
                     </div>
                     <p className="text-xs text-gray-400">
-                      {new Date(review.creation_at).toLocaleString('en-US')}
+                      {new Date(review.creation_at).toLocaleString('vi-VN')}
+                    </p>
+                    <p className="mt-2 text-gray-700">
+                      {review.content}
                     </p>
                   </div>
                 ))
               ) : (
-                <p>No reviews available for this product.</p>
+                <p>Chưa có đánh giá nào cho sản phẩm này.</p>
               )}
             </div>
           )}
         </div>
       </div>
 
-      {/* --------- Display Related Products ---------- */}
+      {/* --------- Hiển Thị Sản Phẩm Liên Quan ---------- */}
       <RelatedProducts
         category={productData.category}
         subCategory={productData.subCategory}

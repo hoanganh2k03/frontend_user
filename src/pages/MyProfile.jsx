@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 
 const MyProfile = () => {
   const { token, backendUrl } = useContext(ShopContext);
-  const [mode, setMode] = useState('view'); // 'view', 'edit', hoặc 'change-password'
+  const [mode, setMode] = useState('view'); // 'view', 'edit', or 'change-password'
   const [userData, setUserData] = useState({
     user_id: '',
     first_name: '',
@@ -18,16 +18,15 @@ const MyProfile = () => {
   });
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-
-  // Trạng thái cho modal đăng ký KOL
   const [isKolModalOpen, setIsKolModalOpen] = useState(false);
   const [kolData, setKolData] = useState({
-    platform: 'Facebook', // Mặc định là Facebook
+    platform: 'Facebook',
     profile_link: '',
     reason: '',
   });
+  const [isKol, setIsKol] = useState(false); // State to track if user is already a KOL
 
-  // Lấy thông tin người dùng khi component được mount
+  // Fetch user data when component mounts
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -53,16 +52,42 @@ const MyProfile = () => {
         }
       } catch (error) {
         console.log(error);
-        toast.error('Không thể tải thông tin hồ sơ.');
+        toast.error('Failed to load profile information.');
+      }
+    };
+
+    const checkKolRole = async () => {
+      try {
+        const userId = localStorage.getItem('user_id');
+        if (!userId) {
+          toast.error('User ID not found. Please log in again.');
+          return;
+        }
+
+        const response = await axios.get(backendUrl + '/api/users/check-role', {
+          params: { user_id: userId ,role_id:3},
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+console.log(response.data);
+        if (response.data.success) {
+          setIsKol(response.data.hasRole);
+        } else {
+          toast.error(response.data.message);
+        }
+      } catch (error) {
+        console.log(error);
+        toast.error('Failed to check KOL role.');
       }
     };
 
     if (token) {
       fetchUserData();
+      checkKolRole();
     }
   }, [token, backendUrl]);
 
-  // Xử lý thay đổi giá trị trong form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setUserData((prevData) => ({
@@ -71,7 +96,6 @@ const MyProfile = () => {
     }));
   };
 
-  // Xử lý thay đổi giá trị trong form đăng ký KOL
   const handleKolInputChange = (e) => {
     const { name, value } = e.target;
     setKolData((prevData) => ({
@@ -80,7 +104,6 @@ const MyProfile = () => {
     }));
   };
 
-  // Xử lý gửi form cập nhật thông tin
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
@@ -90,7 +113,7 @@ const MyProfile = () => {
           first_name: userData.first_name,
           last_name: userData.last_name,
           phone_num: userData.phone_num,
-          password: currentPassword, // Gửi mật khẩu hiện tại để xác thực
+          password: currentPassword,
         },
         {
           headers: {
@@ -100,19 +123,18 @@ const MyProfile = () => {
       );
 
       if (response.data.success) {
-        toast.success('Cập nhật hồ sơ thành công!');
-        setCurrentPassword(''); // Xóa mật khẩu hiện tại sau khi cập nhật
-        setMode('view'); // Chuyển về chế độ xem
+        toast.success('Profile updated successfully!');
+        setCurrentPassword('');
+        setMode('view');
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
       console.log(error);
-      toast.error('Không thể cập nhật hồ sơ.');
+      toast.error('Failed to update profile.');
     }
   };
 
-  // Xử lý thay đổi mật khẩu
   const handleChangePassword = async (e) => {
     e.preventDefault();
     try {
@@ -130,38 +152,35 @@ const MyProfile = () => {
       );
 
       if (response.data.success) {
-        toast.success('Đổi mật khẩu thành công!');
+        toast.success('Password changed successfully!');
         setCurrentPassword('');
         setNewPassword('');
-        setMode('view'); // Chuyển về chế độ xem
+        setMode('view');
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
       console.log(error);
-      toast.error('Không thể đổi mật khẩu.');
+      toast.error('Failed to change password.');
     }
   };
 
-  // Xử lý đăng ký KOL
   const handleKolRegister = async (e) => {
     e.preventDefault();
     try {
-      // Lấy user_id từ localStorage
       const userId = localStorage.getItem('user_id');
       if (!userId) {
-        toast.error('Không tìm thấy user_id. Vui lòng đăng nhập lại.');
+        toast.error('User ID not found. Please log in again.');
         return;
       }
 
-      // Gửi yêu cầu đăng ký KOL
       const response = await axios.post(
         backendUrl + '/api/users/registerinfluencer',
         {
           user_id: userId,
           status: 'pending',
           status_reason: kolData.reason,
-          tier_id: 1, // Hạng thường
+          tier_id: 1,
           social_link: {
             platform: kolData.platform,
             profile_link: kolData.profile_link,
@@ -175,51 +194,38 @@ const MyProfile = () => {
       );
 
       if (response.data.success) {
-        // Thêm vai trò KOL (role_id: 3) vào bảng user_role
-        await axios.post(
-          backendUrl + '/api/users/assignrole',
-          {
-            user_id: userId,
-            role_id: 3, // Vai trò KOL
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        toast.success('Đăng ký KOL thành công! Vui lòng chờ xét duyệt.');
-        setKolData({ platform: 'Facebook', profile_link: '', reason: '' }); // Reset form
-        setIsKolModalOpen(false); // Đóng modal
+        toast.success('KOL registration successful! Please wait for approval.');
+        setKolData({ platform: 'Facebook', profile_link: '', reason: '' });
+        setIsKolModalOpen(false);
+        setIsKol(true); // Update state to hide the button
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
       console.log(error);
-      toast.error('Không thể đăng ký KOL.');
+      toast.error('Failed to register as KOL.');
     }
   };
 
   return (
     <div className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 text-gray-800">
       <div className="inline-flex items-center gap-2 mb-2 mt-10">
-        <p className="prata-regular text-3xl">Hồ Sơ Của Tôi</p>
+        <p className="prata-regular text-3xl">My Profile</p>
         <hr className="border-none h-[1.5px] w-8 bg-gray-800" />
       </div>
 
       {mode === 'view' ? (
         <div className="w-full flex flex-col gap-4">
           <div>
-            <p className="font-semibold">Tên:</p>
+            <p className="font-semibold">First Name:</p>
             <p>{userData.first_name}</p>
           </div>
           <div>
-            <p className="font-semibold">Họ:</p>
+            <p className="font-semibold">Last Name:</p>
             <p>{userData.last_name}</p>
           </div>
           <div>
-            <p className="font-semibold">Số Điện Thoại:</p>
+            <p className="font-semibold">Phone Number:</p>
             <p>{userData.phone_num}</p>
           </div>
           <div>
@@ -227,36 +233,38 @@ const MyProfile = () => {
             <p>{userData.email}</p>
           </div>
           <div>
-            <p className="font-semibold">Trạng Thái:</p>
+            <p className="font-semibold">Status:</p>
             <p>{userData.status}</p>
           </div>
           <div>
-            <p className="font-semibold">Ngày Tạo:</p>
-            <p>{new Date(userData.creation_at).toLocaleString('vi-VN')}</p>
+            <p className="font-semibold">Created At:</p>
+            <p>{new Date(userData.creation_at).toLocaleString('en-US')}</p>
           </div>
           <div>
-            <p className="font-semibold">Cập Nhật Lần Cuối:</p>
-            <p>{new Date(userData.modified_at).toLocaleString('vi-VN')}</p>
+            <p className="font-semibold">Last Modified:</p>
+            <p>{new Date(userData.modified_at).toLocaleString('en-US')}</p>
           </div>
           <div className="w-full flex flex-col gap-2">
             <button
               onClick={() => setMode('edit')}
               className="w-full bg-blue-500 text-white font-light px-8 py-2 mt-4"
             >
-              Chỉnh Sửa Hồ Sơ
+              Edit Profile
             </button>
             <button
               onClick={() => setMode('change-password')}
               className="w-full bg-green-500 text-white font-light px-8 py-2 mt-4"
             >
-              Đổi Mật Khẩu
+              Change Password
             </button>
-            <button
-              onClick={() => setIsKolModalOpen(true)}
-              className="w-full bg-purple-500 text-white font-light px-8 py-2 mt-4"
-            >
-              Đăng Ký KOL
-            </button>
+            {!isKol && (
+              <button
+                onClick={() => setIsKolModalOpen(true)}
+                className="w-full bg-purple-500 text-white font-light px-8 py-2 mt-4"
+              >
+                Register as KOL
+              </button>
+            )}
           </div>
         </div>
       ) : mode === 'edit' ? (
@@ -267,7 +275,7 @@ const MyProfile = () => {
             value={userData.first_name}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-800"
-            placeholder="Tên"
+            placeholder="First Name"
             required
           />
           <input
@@ -276,7 +284,7 @@ const MyProfile = () => {
             value={userData.last_name}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-800"
-            placeholder="Họ"
+            placeholder="Last Name"
             required
           />
           <input
@@ -285,7 +293,7 @@ const MyProfile = () => {
             value={userData.phone_num}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-800"
-            placeholder="Số Điện Thoại"
+            placeholder="Phone Number"
             required
           />
           <input
@@ -300,7 +308,7 @@ const MyProfile = () => {
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             className="w-full px-3 py-2 border border-gray-800"
-            placeholder="Mật Khẩu Hiện Tại"
+            placeholder="Current Password"
             required
           />
           <div className="w-full flex justify-between gap-2">
@@ -312,13 +320,13 @@ const MyProfile = () => {
               }}
               className="w-full bg-gray-500 text-white font-light px-8 py-2 mt-4"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               className="w-full bg-black text-white font-light px-8 py-2 mt-4"
             >
-              Lưu Thay Đổi
+              Save Changes
             </button>
           </div>
         </form>
@@ -329,7 +337,7 @@ const MyProfile = () => {
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             className="w-full px-3 py-2 border border-gray-800"
-            placeholder="Mật Khẩu Hiện Tại"
+            placeholder="Current Password"
             required
           />
           <input
@@ -337,7 +345,7 @@ const MyProfile = () => {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             className="w-full px-3 py-2 border border-gray-800"
-            placeholder="Mật Khẩu Mới"
+            placeholder="New Password"
             required
           />
           <div className="w-full flex justify-between gap-2">
@@ -350,26 +358,26 @@ const MyProfile = () => {
               }}
               className="w-full bg-gray-500 text-white font-light px-8 py-2 mt-4"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               className="w-full bg-black text-white font-light px-8 py-2 mt-4"
             >
-              Đổi Mật Khẩu
+              Change Password
             </button>
           </div>
         </form>
       )}
 
-      {/* Modal Đăng Ký KOL */}
+      {/* KOL Registration Modal */}
       {isKolModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-[90%] sm:max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Đăng Ký KOL</h2>
+            <h2 className="text-xl font-semibold mb-4">Register as KOL</h2>
             <form onSubmit={handleKolRegister} className="flex flex-col gap-4">
               <div>
-                <label className="block font-semibold mb-1">Chọn Mạng Xã Hội:</label>
+                <label className="block font-semibold mb-1">Select Social Media Platform:</label>
                 <select
                   name="platform"
                   value={kolData.platform}
@@ -385,7 +393,7 @@ const MyProfile = () => {
                 </select>
               </div>
               <div>
-                <label className="block font-semibold mb-1">Link Hồ Sơ:</label>
+                <label className="block font-semibold mb-1">Profile Link:</label>
                 <input
                   type="url"
                   name="profile_link"
@@ -397,13 +405,13 @@ const MyProfile = () => {
                 />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Lý Do Đăng Ký:</label>
+                <label className="block font-semibold mb-1">Reason for Registration:</label>
                 <textarea
                   name="reason"
                   value={kolData.reason}
                   onChange={handleKolInputChange}
                   className="w-full px-3 py-2 border border-gray-800"
-                  placeholder="Tại sao bạn muốn trở thành KOL?"
+                  placeholder="Why do you want to become a KOL?"
                   required
                 />
               </div>
@@ -416,13 +424,13 @@ const MyProfile = () => {
                   }}
                   className="w-full bg-gray-500 text-white font-light px-8 py-2"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="w-full bg-purple-500 text-white font-light px-8 py-2"
                 >
-                  Gửi Đăng Ký
+                  Submit Registration
                 </button>
               </div>
             </form>

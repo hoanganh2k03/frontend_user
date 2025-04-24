@@ -3,8 +3,8 @@ import { ShopContext } from '../context/ShopContext';
 import Title from '../components/Title';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import Rating from 'react-rating'; // Thêm thư viện react-rating
-import { assets } from '../assets/assets'; // Giả định bạn đã có star_icon và star_dull_icon
+import Rating from 'react-rating';
+import { assets } from '../assets/assets';
 
 const Orders = () => {
   const { backendUrl, token, currency, navigate } = useContext(ShopContext);
@@ -13,7 +13,8 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [reviewData, setReviewData] = useState({
-    rate: 0, // Bắt đầu với 0 sao
+    rate: 0,
+    content: '',
   });
 
   const loadOrderData = async () => {
@@ -49,8 +50,6 @@ const Orders = () => {
           })
         );
 
-        // Sắp xếp đơn hàng theo created_at giảm dần (mới nhất lên đầu)
-        // Backend đã sắp xếp, nhưng thêm sort ở đây để dự phòng
         const sortedOrders = ordersWithItems.sort((a, b) =>
           new Date(b.created_at) - new Date(a.created_at)
         );
@@ -79,13 +78,14 @@ const Orders = () => {
     setSelectedItem(null);
     setReviewData({
       rate: 0,
+      content: '',
     });
   };
 
-  const handleReviewChange = (value) => {
+  const handleReviewChange = (field, value) => {
     setReviewData((prevData) => ({
       ...prevData,
-      rate: value,
+      [field]: value,
     }));
   };
 
@@ -95,15 +95,20 @@ const Orders = () => {
       toast.error('Please select a rating.');
       return;
     }
+    if (!reviewData.content.trim()) {
+      toast.error('Please enter the review content.');
+      return;
+    }
 
     try {
-      console.log(selectedItem)
+      console.log(selectedItem);
       const response = await axios.post(
         `${backendUrl}/api/reviews/add`,
         {
           product_id: selectedItem.product_id,
           rate: reviewData.rate,
-          status: 'pending', // Trạng thái mặc định là pending
+          content: reviewData.content,
+          status: 'pending',
         },
         { headers: { token } }
       );
@@ -135,7 +140,6 @@ const Orders = () => {
               key={index}
               className="py-4 border-t border-b text-gray-700"
             >
-              {/* Thông tin đơn hàng */}
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                 <div className="flex items-center gap-4">
                   <p className="text-sm md:text-base font-medium">
@@ -162,7 +166,6 @@ const Orders = () => {
                 </div>
               </div>
 
-              {/* Danh sách sản phẩm trong đơn hàng */}
               {order.items.length === 0 ? (
                 <p className="text-gray-500 text-sm">No items in this order.</p>
               ) : (
@@ -199,7 +202,7 @@ const Orders = () => {
                           onClick={() => openReviewModal(order, item)}
                           className="bg-blue-500 text-white px-4 py-2 text-sm rounded-sm"
                         >
-                          Đánh giá
+                          Write a Review
                         </button>
                       )}
                     </div>
@@ -211,20 +214,30 @@ const Orders = () => {
         )}
       </div>
 
-      {/* Modal để thêm review */}
+      {/* Modal to Add Review */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-medium mb-4">Đánh giá sản phẩm: {selectedItem?.name}</h2>
+            <h2 className="text-xl font-medium mb-4">Review Product: {selectedItem?.name}</h2>
             <form onSubmit={submitReview} className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Chọn số sao:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Rating:</label>
                 <Rating
                   initialRating={reviewData.rate}
-                  onChange={handleReviewChange}
+                  onChange={(value) => handleReviewChange('rate', value)}
                   emptySymbol={<img src={assets.star_dull_icon} className="w-6 h-6" alt="empty star" />}
                   fullSymbol={<img src={assets.star_icon} className="w-6 h-6" alt="full star" />}
-                  fractions={1} // Cho phép chọn sao nguyên
+                  fractions={1}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Review Content:</label>
+                <textarea
+                  value={reviewData.content}
+                  onChange={(e) => handleReviewChange('content', e.target.value)}
+                  className="w-full p-2 border rounded-md resize-none"
+                  rows="4"
+                  placeholder="Write your review here..."
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -233,13 +246,13 @@ const Orders = () => {
                   onClick={closeReviewModal}
                   className="bg-gray-500 text-white px-4 py-2 rounded-md"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="bg-black text-white px-4 py-2 rounded-md"
                 >
-                  Gửi đánh giá
+                  Submit Review
                 </button>
               </div>
             </form>
