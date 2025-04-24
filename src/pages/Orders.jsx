@@ -195,7 +195,7 @@ const Orders = () => {
                         <p className="mt-1">
                           Payment Status:{' '}
                           <span className="text-gray-400">{order.payment_status}</span>
-                        </p>
+                        </p>ỏ
                       </div>
                       {order.status === 'delivered' && (
                         <button
