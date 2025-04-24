@@ -16,6 +16,8 @@ const Orders = () => {
     rate: 0,
     content: '',
   });
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
 
   const loadOrderData = async () => {
     try {
@@ -101,7 +103,6 @@ const Orders = () => {
     }
 
     try {
-      console.log(selectedItem);
       const response = await axios.post(
         `${backendUrl}/api/reviews/add`,
         {
@@ -122,6 +123,39 @@ const Orders = () => {
     } catch (error) {
       console.error('Error submitting review:', error);
       toast.error('Failed to submit review.');
+    }
+  };
+
+  const openCancelModal = (order) => {
+    setOrderToCancel(order);
+    setShowCancelModal(true);
+  };
+
+  const closeCancelModal = () => {
+    setShowCancelModal(false);
+    setOrderToCancel(null);
+  };
+
+  const cancelOrder = async () => {
+    if (!orderToCancel) return;
+
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/order1/cancel-order`,
+        { orderId: orderToCancel.id ,},
+        { headers: { token } }
+      );
+
+      if (response.data.success) {
+        toast.success('Order canceled successfully.');
+        closeCancelModal();
+        await loadOrderData(); // Refresh the order list
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      console.error('Error canceling order:', error);
+      toast.error('Failed to cancel order.');
     }
   };
 
@@ -154,7 +188,11 @@ const Orders = () => {
                     Total: {currency}{order.total}
                   </p>
                   <div className="flex items-center gap-2">
-                    <p className="min-w-2 h-2 rounded-full bg-green-500"></p>
+                    <p
+                      className={`min-w-2 h-2 rounded-full ${
+                        order.status === 'cancelled' ? 'bg-red-500' : 'bg-green-500'
+                      }`}
+                    ></p>
                     <p className="text-sm md:text-base">{order.status}</p>
                   </div>
                   <button
@@ -163,6 +201,14 @@ const Orders = () => {
                   >
                     Refresh Status
                   </button>
+                  {order.status === 'pending' && (
+                    <button
+                      onClick={() => openCancelModal(order)}
+                      className="border px-4 py-2 text-sm font-medium rounded-sm bg-red-500 text-white"
+                    >
+                      Cancel Order
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -195,7 +241,7 @@ const Orders = () => {
                         <p className="mt-1">
                           Payment Status:{' '}
                           <span className="text-gray-400">{order.payment_status}</span>
-                        </p>ỏ
+                        </p>
                       </div>
                       {order.status === 'delivered' && (
                         <button
@@ -256,6 +302,30 @@ const Orders = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal to Confirm Cancel Order */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-xl font-medium mb-4">Cancel Order #{orderToCancel?.id}</h2>
+            <p className="text-gray-700 mb-4">Are you sure you want to cancel this order? This action cannot be undone.</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={closeCancelModal}
+                className="bg-gray-500 text-white px-4 py-2 rounded-md"
+              >
+                No
+              </button>
+              <button
+                onClick={cancelOrder}
+                className="bg-red-500 text-white px-4 py-2 rounded-md"
+              >
+                Yes
+              </button>
+            </div>
           </div>
         </div>
       )}
