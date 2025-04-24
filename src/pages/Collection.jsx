@@ -17,7 +17,7 @@ const Collection = () => {
 
   // Danh sách categories và subcategories
   const categoriesList = ['Men', 'Women', 'Kids'];
-  const subCategoriesList = ['Topwear', 'Bottomwear', 'Winterwear', 'Dress'];
+  const subCategoriesList = ['Topwear', 'Bottomwear', 'Winterwear'];
 
   // Hàm toggleCategory
   const toggleCategory = (e) => {
@@ -211,9 +211,8 @@ const Collection = () => {
               <button
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page === 1}
-                className={`px-4 py-2 border rounded ${
-                  page === 1 ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200'
-                }`}
+                className={`px-4 py-2 border rounded ${page === 1 ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
               >
                 Previous
               </button>
@@ -223,9 +222,8 @@ const Collection = () => {
               <button
                 onClick={() => handlePageChange(page + 1)}
                 disabled={page === totalPages}
-                className={`px-4 py-2 border rounded ${
-                  page === totalPages ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200'
-                }`}
+                className={`px-4 py-2 border rounded ${page === totalPages ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
               >
                 Next
               </button>
