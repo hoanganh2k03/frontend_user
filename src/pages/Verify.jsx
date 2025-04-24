@@ -21,10 +21,9 @@ const Verify = () => {
       }
 
       let response;
-
+console.log("orderID : ",orderId);
       // Xử lý MoMo
       if (resultCode !== null) {
-        const orderId = localStorage.getItem('momo_order_id');
         const address = JSON.parse(localStorage.getItem('momo_address') || '{}');
         const amount = parseFloat(localStorage.getItem('momo_amount') || '0');
 
@@ -56,7 +55,6 @@ const Verify = () => {
 
         if (response.data.success) {
           setCartItems({});
-          localStorage.removeItem('momo_order_id');
           localStorage.removeItem('momo_address');
           localStorage.removeItem('momo_amount');
           toast.success('Payment successful!');

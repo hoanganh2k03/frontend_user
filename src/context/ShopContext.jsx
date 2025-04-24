@@ -68,7 +68,12 @@ const ShopContextProvider = (props) => {
         return totalCount;
       };
 
-      const updateQuantity = async (cart_item_id, quantity) => {
+      const updateQuantity = async (cart_item_id, quantity,quantityinventory) => {
+        if(quantity>quantityinventory){
+          toast.error('Out of Stock');
+          return;
+        }
+        
         if (!token) {
           toast.error('Please login to update cart');
           navigate('/login');
