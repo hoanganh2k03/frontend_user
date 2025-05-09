@@ -28,9 +28,11 @@ const Product = () => {
       setProductData(product);
       setImage(product.small_image ? `${baseImageUrl}${product.small_image}` : '');
       setReviews([]);
+      // Fetch reviews immediately after getting product data
       await fetchReviews(product.id);
     } catch (err) {
-      setError('Failed to load product information: ' + err.message);
+      setError('Unable to fetch product information: ' + err.message);
+
       setProductData(null);
     } finally {
       setLoading(false);
@@ -45,21 +47,24 @@ const Product = () => {
         product_id: productId,
         page: 1,
         limit: 10,
-        sort_by: 'createdAt',
+        sort_by: 'creation_at',
         sort_order: 'DESC',
-      };
+      };    
+      const queryString = new URLSearchParams(params).toString();
+      
       const response = await axios.get(url, { params });
 
       if (response.data.success) {
         setReviews(response.data.reviews);
       } else {
-        console.error('Failed to load reviews:', response.data.message);
-        toast.error('Failed to load reviews: ' + response.data.message);
+
+        console.error('Unable to fetch reviews:', response.data.message);
+        toast.error('Unable to fetch reviews: ' + response.data.message);
         setReviews([]);
       }
     } catch (error) {
-      console.error('Error loading reviews:', error);
-      toast.error('Error loading reviews: ' + error.message);
+      console.error('Error fetching reviews:', error);
+      toast.error('Error fetching reviews: ' + error.message);
       setReviews([]);
     } finally {
       setLoadingReviews(false);
@@ -95,9 +100,10 @@ const Product = () => {
 
   return productData ? (
     <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
-      {/* Product Information */}
+
+      {/*----------- Product Data-------------- */}
       <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
-        {/* Product Images */}
+        {/*---------- Product Images------------- */}
         <div className="flex-1 flex flex-col-reverse gap-3 sm:flex-row">
           <div className="flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full">
             {productData.small_image && (
@@ -129,7 +135,8 @@ const Product = () => {
           </div>
         </div>
 
-        {/* Product Details */}
+
+        {/* -------- Product Info ---------- */}
         <div className="flex-1">
           <h1 className="font-medium text-2xl mt-2">{productData.name}</h1>
           <div className="flex items-center gap-1 mt-2">
@@ -184,16 +191,26 @@ const Product = () => {
               </div>
             )}
           </div>
+          <button
+            onClick={() => addToCart(productData.id, size)}
+            className={`bg-black text-white px-8 py-3 text-sm active:bg-gray-700 ${
+              productData.out_of_stock || !size ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={productData.out_of_stock || !size}
+          >
+            ADD TO CART
+          </button>
           <hr className="mt-8 sm:w-4/5" />
           <div className="text-sm text-gray-500 mt-5 flex flex-col gap-1">
-            <p>100% Original Product.</p>
-            <p>Cash on Delivery Available.</p>
-            <p>Easy Returns within 7 Days.</p>
+            <p>100% Original product.</p>
+            <p>Cash on delivery is available for this product.</p>
+            <p>Easy return and exchange policy within 7 days.</p>
           </div>
         </div>
       </div>
 
-      {/* Description & Reviews Section */}
+
+      {/* ---------- Description & Review Section ------------- */}
       <div className="mt-20">
         <div className="flex">
           <button
@@ -218,8 +235,10 @@ const Product = () => {
             <div className="flex flex-col gap-4">
               <p>{productData.description}</p>
               <p>
-                E-commerce websites typically display products or services along with detailed descriptions,
-                images, prices, and available variants (e.g., sizes, colors). Each product usually has its own page with relevant information.
+
+                E-commerce websites typically display products or services along with detailed
+                descriptions, images, prices, and available variants (e.g., sizes, colors). Each
+                product usually has its own dedicated page with relevant information.
               </p>
             </div>
           ) : (
@@ -228,10 +247,11 @@ const Product = () => {
                 <p>Loading reviews...</p>
               ) : reviews.length > 0 ? (
                 reviews.map((review) => (
-                  <div key={review._id} className="border-b pb-4 mb-4">
+                  <div key={review.review_id} className="border-b pb-4 mb-4">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold">
-                        {review.user_id?.username || `User #${review.user_id}`}
+
+                        User #{review.user_id}
                       </p>
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, index) => (
@@ -250,21 +270,21 @@ const Product = () => {
                     </div>
                     <p className="text-xs text-gray-400">
                       {new Date(review.creation_at).toLocaleString('en-US')}
-                    </p>
-                    <p className="mt-2 text-gray-700">
-                      {review.content}
+
                     </p>
                   </div>
                 ))
               ) : (
-                <p>No reviews for this product yet.</p>
+
+                <p>No reviews available for this product.</p>
               )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Related Products */}
+
+      {/* --------- Display Related Products ---------- */}
       <RelatedProducts
         category={productData.category}
         subCategory={productData.subCategory}

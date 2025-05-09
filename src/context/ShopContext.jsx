@@ -68,37 +68,37 @@ const ShopContextProvider = (props) => {
     return totalCount;
   };
 
-  const updateQuantity = async (cart_item_id, quantity, quantityinventory) => {
-    if (quantity > quantityinventory) {
-      toast.error('Out of Stock');
-      return;
-    }
-
-    if (!token) {
-      toast.error('Please login to update cart');
-      navigate('/login');
-      return;
-    }
-    console.log('Calling update with cart_item_id:', cart_item_id, 'quantity:', quantity);
-    console.log('Backend URL:', `${backendUrl}/api/cart/update`);
-    console.log('Token:', token);
-    try {
-      const response = await axios.put(
-        `${backendUrl}/api/cart/update`,
-        { cart_item_id, quantity },
-        { headers: { token } }
-      );
-
-      if (response.data.success) {
-        await getUserCart(token);
-      } else {
-        toast.error(response.data.message);
-      }
-    } catch (error) {
-      console.error('Error updating cart item:', error);
-      toast.error(error.message);
-    }
-  };
+      const updateQuantity = async (cart_item_id, quantity,quantityinventory) => {
+        if(quantity>quantityinventory){
+          toast.error('Out of Stock');
+          return;
+        }
+        
+        if (!token) {
+          toast.error('Please login to update cart');
+          navigate('/login');
+          return;
+        }
+        console.log('Calling update with cart_item_id:', cart_item_id, 'quantity:', quantity);
+        console.log('Backend URL:', `${backendUrl}/api/cart/update`);
+        console.log('Token:', token);
+        try {
+          const response = await axios.put(
+            `${backendUrl}/api/cart/update`,
+            { cart_item_id, quantity },
+            { headers: { token } }
+          );
+      
+          if (response.data.success) {
+            await getUserCart(token);
+          } else {
+            toast.error(response.data.message);
+          }
+        } catch (error) {
+          console.error('Error updating cart item:', error);
+          toast.error(error.message);
+        }
+      };
 
   const getCartAmount = () => {
     let totalAmount = 0;
